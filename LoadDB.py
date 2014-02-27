@@ -1,8 +1,10 @@
+from gi.overrides.keysyms import minutes
+
 __author__ = 'fernando'
 import os
 from os import listdir
 from os.path import isfile, join
-from datetime import date
+from datetime import date, timedelta, datetime
 import sqlite3
 
 class DBLoader:
@@ -43,7 +45,7 @@ class DBLoader:
     csvFile: fichero CSV con el path completo
     """
     def __insertCSV(self, csvFile, sondaId):
-        fileDate = date(2000 + int(csvFile[-6:-4]),  int(csvFile[-8:-6]), int(csvFile[-10:-8]))
+        temperatureDateTime = datetime(2000 + int(csvFile[-6:-4]),  int(csvFile[-8:-6]), int(csvFile[-10:-8]))
         file = open(csvFile, 'r')
         temperature = 0
         previousTemperature = 0
@@ -56,14 +58,18 @@ class DBLoader:
                 temperature = int(line)
                 if temperature > 10 or temperature < -10:
                     temperature = temperature / 10
-                print temperature
-            except:
-              print "error " + str(previousTemperature)
+                sql = "insert into temperatures values('{}','{}',{})".format(temperatureDateTime, sondaId, temperature)
+                temperatureDateTime = temperatureDateTime + timedelta(minutes=self.dataInterval)
+            except ValueError as ex:
+                print ex
+                sql = "insert into temperatures values('{}','{}',{})".format(temperatureDateTime, sondaId, previousTemperature)
+            self.dbConnection.execute(sql)
+        self.dbConnection.commit()
 
 
 
 
 
 if __name__ == "__main__":
-    db = DBLoader('/Users/fernando/SONDAS_NAI/','/Users/fernando/SONDAS_NAI/tempDatabase.db')
+    db = DBLoader('/home/fernando/SONDAS_NAI/','/home/fernando/SONDAS_NAI/tempDatabase.db')
     db.run()
